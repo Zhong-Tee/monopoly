@@ -114,7 +114,7 @@
   .p-row .dir{color:var(--gold);font-size:18px}
   .money-setting{display:flex;align-items:center;gap:10px}
   .money-setting input{flex:1}
-  .icon-toggle{width:58px;height:50px;flex:none;border-radius:15px;background:#0c1626;border:1px solid var(--line);font-size:22px}
+  .icon-toggle{width:58px;height:50px;flex:none;border-radius:15px;background:#0c1626;border:1px solid var(--line);font-size:22px;display:grid;place-items:center}
   .icon-toggle.on{background:var(--gold);color:var(--accent-ink);border-color:var(--gold)}
 
   .theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
@@ -290,7 +290,7 @@
   #aJail{height:128px;min-height:128px;margin-top:18px}
   #poolCollect{height:128px;min-height:128px}
   #cfOk,#cfCancel{height:128px;min-height:128px}
-  #mResume,#mReset,#mSetup,#mNew{height:128px;min-height:128px}
+  #mResume,#mSetup,#mNew{height:128px;min-height:128px}
   .hr{height:1px;background:var(--line);margin:16px 0}
 
   /* ranking (end game) */
@@ -343,7 +343,7 @@
     .seg button,#amtMax,#amtOk{height:96px;min-height:96px}
     #aRecv,#aPay,#aSalary,#aTax{height:96px;min-height:96px}
     #aJail{height:96px;min-height:96px}
-    #poolCollect,#cfOk,#cfCancel,#mResume,#mReset,#mSetup,#mNew{height:96px;min-height:96px}
+    #poolCollect,#cfOk,#cfCancel,#mResume,#mSetup,#mNew{height:96px;min-height:96px}
     .jail-options .btn{height:96px;min-height:96px}
     #ppList .pick{height:104px;min-height:104px}
     #ppList .pick .tok{height:104px}
@@ -403,7 +403,7 @@
     #aJail{height:82px;min-height:82px;margin-top:10px}
     #poolCollect{height:88px;min-height:88px}
     #cfOk,#cfCancel{height:84px;min-height:84px}
-    #mResume,#mReset,#mSetup,#mNew{height:78px;min-height:78px}
+    #mResume,#mSetup,#mNew{height:78px;min-height:78px}
     .jail-options{gap:6px}
     .jail-options .btn{height:84px;min-height:84px;font-size:15px}
     .dir-grid{gap:6px}
@@ -448,6 +448,7 @@
         <span>เงินเริ่มต้นของแต่ละคน (M)</span>
         <div class="money-setting">
           <input type="number" id="startMoney" inputmode="numeric" value="1500">
+          <button type="button" class="icon-toggle" id="resetMoneySetup" aria-label="รีเซ็ตเงินผู้เล่น" title="รีเซ็ตเงินผู้เล่น">💰</button>
           <button type="button" class="icon-toggle on" id="equalMoneyToggle" aria-label="ใช้เงินเริ่มต้นเท่ากัน" title="ใช้เงินเริ่มต้นเท่ากัน">🔗</button>
         </div>
       </label>
@@ -621,6 +622,7 @@ function renderSetup(){
   equalToggle.textContent=draft.equalStartMoney?'🔗':'🔓';
   equalToggle.setAttribute('aria-label',draft.equalStartMoney?'ใช้เงินเริ่มต้นเท่ากัน':'กำหนดเงินเริ่มต้นแยกแต่ละคน');
   equalToggle.title=equalToggle.getAttribute('aria-label');
+  $('#resetMoneySetup').style.display=game?'grid':'none';
   $('#startMoney').disabled=!draft.equalStartMoney;
   $('#salary').value=draft.salary;
   $('#taxAmount').value=Math.abs(draft.bonuses.find(b=>b.label.trim()==='เก็บภาษี')?.amount??-100);
@@ -1124,12 +1126,10 @@ function menuSheet(){
   openSheet(`
     <h3>⚙️ เมนู</h3>
     ${game?'<button class="btn block" id="mResume" style="margin-bottom:10px">▶️ กลับไปหน้าเกม</button>':''}
-    ${game?'<button class="btn block" id="mReset" style="margin-bottom:10px">💰 รีเซ็ตเงินผู้เล่นเป็นค่าเริ่มต้น</button>':''}
     <button class="btn block" id="mSetup" style="margin-bottom:10px">🛠️ แก้ไขตั้งค่า / ผู้เล่น</button>
     <button class="btn red block" id="mNew">🗑️ จบเกม & เริ่มใหม่</button>
   `);
-  const r=$('#mResume');if(r)r.onclick=closeSheet;
-  const rs=$('#mReset');if(rs)rs.onclick=()=>{game.players.forEach(p=>p.balance=p.initialBalance??game.startMoney);game.pool=0;game.history=[];save();renderGame();closeSheet();toast('รีเซ็ตเงินแล้ว','good')};
+  const r=$('#mResume');if(r)r.onclick=()=>{closeSheet();showGame()};
   $('#mSetup').onclick=()=>{closeSheet();showSetup()};
   $('#mNew').onclick=endGameResults;
 }
@@ -1158,6 +1158,19 @@ $('#equalMoneyToggle').onclick=()=>{
   draft.equalStartMoney=!draft.equalStartMoney;
   if(!draft.equalStartMoney)draft.players.forEach(p=>p.startMoney=draft.startMoney);
   save();renderSetup();
+};
+$('#resetMoneySetup').onclick=()=>{
+  if(!game){toast('ยังไม่ได้เริ่มเกม','bad');return}
+  confirmSheet({
+    title:'รีเซ็ตเงินผู้เล่น?',
+    ok:'ยืนยันรีเซ็ต',danger:true,
+    onOk:()=>{
+      const resetAmount=Math.max(0,parseInt(draft.startMoney,10)||0);
+      game.startMoney=resetAmount;
+      game.players.forEach(p=>{p.balance=resetAmount;p.initialBalance=resetAmount});
+      game.pool=0;game.history=[];save();showGame();toast('รีเซ็ตทุกคนเป็น '+fmt(resetAmount)+' M แล้ว','good');
+    }
+  });
 };
 $('#salary').oninput=e=>{draft.salary=parseInt(e.target.value||0,10)||0;save()};
 $('#taxAmount').oninput=e=>{
