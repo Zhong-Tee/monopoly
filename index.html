@@ -719,7 +719,7 @@ function renderGame(){
   // bank grid
   const bg=$('#bankGrid');bg.innerHTML='';
   const pool=document.createElement('button');pool.className='bank-btn';pool.id='poolBox';
-  pool.innerHTML=`<b>🎁 กองโบนัท</b><small>${fmt(game.pool)} M</small>`;
+  pool.innerHTML=`<b>🎁 กองโบนัส</b><small>${fmt(game.pool)} M</small>`;
   pool.onclick=poolMenu;
   bg.appendChild(pool);
 
@@ -958,20 +958,20 @@ function pickPlayer(title,cb){
 /* ================= POOL MENU ================= */
 function poolMenu(){
   openSheet(`
-    <h3>🎁 กองโบนัท</h3>
+    <h3>🎁 กองโบนัส</h3>
     <div class="amt-box"><div class="who">ยอดในกอง</div><div class="big">${fmt(game.pool)}<span class="m">M</span></div></div>
-    <button class="btn green block" id="poolCollect">🏆 รับโบนัททั้งหมด</button>
+    <button class="btn green block" id="poolCollect">🏆 รับโบนัสทั้งหมด</button>
   `);
   $('#poolCollect').onclick=()=>{
     if(game.pool<=0){toast('กองยังว่าง','bad');return}
-    pickPlayer('ใครรับโบนัททั้งหมด?',pid=>{
+    pickPlayer('ใครรับโบนัสทั้งหมด?',pid=>{
       const p=byId(pid),amount=game.pool;
       confirmSheet({
-        title:'ยืนยันรับโบนัททั้งหมด?',
-        msg:p.name+' จะได้รับ '+fmt(amount)+' M จากกองโบนัท',
+        title:'ยืนยันรับโบนัสทั้งหมด?',
+        msg:p.name+' จะได้รับ '+fmt(amount)+' M จากกองโบนัส',
         ok:'ยืนยันรับ',
         large:true,
-        onOk:()=>doTransfer('pool',{type:'player',id:pid},amount,'รับโบนัททั้งหมด')
+        onOk:()=>doTransfer('pool',{type:'player',id:pid},amount,'รับโบนัสทั้งหมด')
       });
     });
   };
